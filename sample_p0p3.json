@@ -1,0 +1,90 @@
+[
+  {
+    "id": "p0-001",
+    "sender_id": "10001",
+    "sender_name": "教务老师",
+    "content": "【临时通知】高等数学考试改到明天上午8点，地点改到A301，请务必今天确认",
+    "group_name": "班级群",
+    "timestamp": 1763769600
+  },
+  {
+    "id": "p0-002",
+    "sender_id": "10002",
+    "sender_name": "学长",
+    "content": "大创申报材料截止今晚23:59，还没交的赶紧提交，逾期不候",
+    "group_name": "竞赛群",
+    "timestamp": 1763769660
+  },
+  {
+    "id": "p1-001",
+    "sender_id": "10003",
+    "sender_name": "王教授",
+    "content": "课题组招募本科生参与科研项目，需要3人，报名截止11月30日，有意者请联系",
+    "group_name": "科研群",
+    "timestamp": 1763769720
+  },
+  {
+    "id": "p1-002",
+    "sender_id": "10004",
+    "sender_name": "辅导员",
+    "content": "关于国家奖学金评选的通知，请符合条件的同学于周五前提交申请材料",
+    "group_name": "年级群",
+    "timestamp": 1763769780
+  },
+  {
+    "id": "p2-001",
+    "sender_id": "10005",
+    "sender_name": "同学A",
+    "content": "分享一份高数期末复习资料和历年真题，需要的同学自取",
+    "group_name": "学习群",
+    "timestamp": 1763769840
+  },
+  {
+    "id": "p2-002",
+    "sender_id": "10006",
+    "sender_name": "同学B",
+    "content": "这个知识点我整理了一下，讨论一下这道题的解法",
+    "group_name": "课程群",
+    "timestamp": 1763769900
+  },
+  {
+    "id": "p3-001",
+    "sender_id": "10007",
+    "sender_name": "群友",
+    "content": "哈哈哈哈 表情包 摸鱼 早安",
+    "group_name": "水群",
+    "timestamp": 1763769960
+  },
+  {
+    "id": "p3-002",
+    "sender_id": "10008",
+    "sender_name": "机器人",
+    "content": "签到打卡接龙，第8楼了",
+    "group_name": "水群",
+    "timestamp": 1763770020
+  },
+  {
+    "id": "p1-003",
+    "sender_id": "10009",
+    "sender_name": "班委",
+    "content": "明天下午2点有互联网+大赛讲座，地点图书馆报告厅，名额有限",
+    "group_name": "竞赛群",
+    "timestamp": 1763770080
+  },
+  {
+    "id": "private-001",
+    "sender_id": "10010",
+    "sender_name": "朋友",
+    "content": "紧急！我住院了急需用钱",
+    "is_private": true,
+    "timestamp": 1763770140
+  },
+  {
+    "id": "dup-001",
+    "sender_id": "10011",
+    "sender_name": "教务老师",
+    "content": "【临时通知】高等数学考试改到明天上午8点，地点改到A301，请务必今天确认",
+    "group_name": "班级群",
+    "timestamp": 1763770200
+  }
+]

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>判断浅试器</title>
+<style>
+  body{font-family:-apple-system,"Microsoft YaHei",sans-serif;max-width:820px;margin:32px auto;padding:0 16px;color:#1a1a1a;background:#fff;line-height:1.6}
+  h1{font-size:18px;font-weight:500;margin:0 0 6px}
+  .sub{color:#666;font-size:13px;margin:0 0 20px}
+  textarea{width:100%;height:180px;font-family:Consolas,monospace;font-size:12px;padding:12px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box}
+  button{font-size:13px;padding:7px 16px;border:1px solid #bbb;background:#fff;border-radius:8px;cursor:pointer;margin:10px 0 20px}
+  button:hover{background:#f5f5f5}
+  .err{color:#c0392b;font-size:13px}
+  .q{font-size:15px;font-weight:500;margin:20px 0 12px}
+  .opts{display:grid;gap:10px}
+  .opt{border:1px solid #e0e0e0;border-radius:12px;padding:14px 16px;cursor:pointer;transition:border-color .15s}
+  .opt:hover{border-color:#888}
+  .opt.sel{border:2px solid #2b6cb0}
+  .opt .t{font-weight:500;font-size:14px;margin-bottom:4px}
+  .opt .p{color:#666;font-size:13px}
+  .detail{margin-top:16px;border:1px solid #e0e0e0;border-radius:12px;padding:16px;min-height:80px}
+  .detail h3{margin:0 0 10px;font-size:14px;font-weight:500}
+  .row{margin-bottom:10px;font-size:13px}
+  .row .k{font-weight:500}
+  .row .v{color:#555;white-space:pre-line}
+  .pick{margin-top:14px;font-size:13px;color:#2b6cb0;font-weight:500}
+</style>
+</head>
+<body>
+<h1>判断浅试器</h1>
+<p class="sub">先读真相文档 → 把要判断的事和每个选项的结果填进下面 JSON → 生成可视化对比 → 选一个 → 把结论告诉我。离线可用，数据不上传。</p>
+<textarea id="src">{
+  "question": "明天下午的互联网+讲座，判成哪一级？",
+  "options": [
+    {
+      "title": "判成 P0",
+      "preview": "立即弹窗提醒",
+      "detail": {
+        "你现在会看到": "手机立刻弹窗 + 响铃",
+        "提醒内容": "【P0】讲座报名，明下午2点，名额有限",
+        "后果": "现在不定就没了 — 符合标准"
+      }
+    },
+    {
+      "title": "判成 P1",
+      "preview": "进今晚日报",
+      "detail": {
+        "你现在会看到": "不弹窗，21点日报出现",
+        "提醒内容": "竞赛机会：互联网+讲座需报名",
+        "后果": "当天没看日报可能错过 — 偏晚"
+      }
+    },
+    {
+      "title": "判成 P3",
+      "preview": "直接过滤",
+      "detail": {
+        "你现在会看到": "什么都没有",
+        "提醒内容": "（无）",
+        "后果": "完全不知道 — 判错代价最大"
+      }
+    }
+  ]
+}</textarea>
+<div><button onclick="gen()">生成对比 →</button></div>
+<div id="err" class="err"></div>
+<div id="out"></div>
+
+<script>
+function gen(){
+  var d;
+  try{ d = JSON.parse(document.getElementById('src').value); }
+  catch(e){ document.getElementById('err').textContent = 'JSON 格式错误：'+e.message; return; }
+  document.getElementById('err').textContent='';
+  var q = d.question || '请选择';
+  var opts = d.options || [];
+  var html = '<div class="q">'+esc(q)+'</div><div class="opts" id="opts">';
+  opts.forEach(function(o,i){
+    html += '<div class="opt" data-i="'+i+'"><div class="t">'+esc(o.title||'')+'</div><div class="p">'+esc(o.preview||'')+'</div></div>';
+  });
+  html += '</div><div class="detail" id="detail"><h3>点上面任一选项，看它的具体结果</h3></div><div class="pick" id="pick"></div>';
+  var out = document.getElementById('out');
+  out.innerHTML = html;
+  var chosen = -1;
+  out.querySelectorAll('.opt').forEach(function(el){
+    el.addEventListener('click', function(){
+      var i = +el.getAttribute('data-i');
+      chosen = i;
+      out.querySelectorAll('.opt').forEach(function(x){x.classList.remove('sel');});
+      el.classList.add('sel');
+      var o = opts[i], det = '<h3>'+esc(o.title||'')+'</h3>';
+      var dt = o.detail || {};
+      Object.keys(dt).forEach(function(k){
+        det += '<div class="row"><span class="k">'+esc(k)+'：</span><span class="v">'+esc(dt[k])+'</span></div>';
+      });
+      document.getElementById('detail').innerHTML = det;
+      document.getElementById('pick').textContent = '已选「'+(o.title||'')+'」— 把你的选择告诉我，我写进真相文档';
+    });
+  });
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+gen();
+</script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+# === 凭据（绝对不能上传）===
+.protocol_token
+config.json
+config.json.bak
+*.key
+*.pem
+*_sendkey*
+
+# === 数据与备份（含个人隐私）===
+*.db
+*.db-shm
+*.db-wal
+backups/
+
+# === 协议端二进制/压缩包（体积大，且非源码）===
+protocol/*.zip
+protocol/Lagrange.OneBot/
+*.exe
+*.dll
+
+# === 依赖与缓存 ===
+node_modules/
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+venv/
+
+# === 测试临时产物 ===
+_test_*
+_latest.db
+*.log
+launch-marker.txt
+run-out.txt
+run-err.txt
+
+# === WorkBuddy 本地数据 ===
+.workbuddy/

@@ -1,0 +1,66 @@
+[
+  {
+    "id": "m001",
+    "sender_id": "10001",
+    "sender_name": "组长",
+    "content": "线上服务崩了，立刻处理！马上回滚",
+    "group_name": "项目组",
+    "timestamp": 1763769600
+  },
+  {
+    "id": "m002",
+    "sender_id": "10002",
+    "sender_name": "医生",
+    "content": "你妈妈刚才急诊住院了，请尽快过来",
+    "is_private": true,
+    "timestamp": 1763769700
+  },
+  {
+    "id": "m003",
+    "sender_id": "10003",
+    "sender_name": "同学A",
+    "content": "明天下午3点开会评审方案，记得提交报告",
+    "group_name": "课程群",
+    "timestamp": 1763769800
+  },
+  {
+    "id": "m004",
+    "sender_id": "10004",
+    "sender_name": "网友",
+    "content": "早安！今天中午吃什么？来投票抽奖领红包",
+    "group_name": "摸鱼水群",
+    "timestamp": 1763769900
+  },
+  {
+    "id": "m005",
+    "sender_id": "10005",
+    "sender_name": "同事B",
+    "content": "这个需求我改了一下进度，你看下",
+    "group_name": "项目组",
+    "timestamp": 1763770000
+  },
+  {
+    "id": "m006",
+    "sender_id": "10006",
+    "sender_name": "HR",
+    "content": "你的面试安排确认了，offer 合同明天签",
+    "is_private": true,
+    "timestamp": 1763770100
+  },
+  {
+    "id": "m007",
+    "sender_id": "10007",
+    "sender_name": "群友C",
+    "content": "签到打卡接龙，第8楼了",
+    "group_name": "摸鱼水群",
+    "timestamp": 1763770200
+  },
+  {
+    "id": "m008",
+    "sender_id": "10008",
+    "sender_name": "老师",
+    "content": "@全体成员 考试报名截止通知，成绩报告周五出",
+    "group_name": "课程群",
+    "timestamp": 1763770300
+  }
+]

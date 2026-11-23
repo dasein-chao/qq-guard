@@ -1,0 +1,22 @@
+[
+  {"id":"r01","sender_id":"2001","sender_name":"辅导员","content":"@全体成员 明天上午10点在学院楼301开会，请准时参加，不得缺席","group_name":"年级群","timestamp":1763780000},
+  {"id":"r02","sender_id":"2002","sender_name":"学习委员","content":"作业提交截止本周五晚12点，提交到学习通，迟交扣分","group_name":"班级群","timestamp":1763780060},
+  {"id":"r03","sender_id":"2003","sender_name":"张老师","content":"下周一的课调到周三下午，教室改到B203","group_name":"课程群","timestamp":1763780120},
+  {"id":"r04","sender_id":"2004","sender_name":"实验室师兄","content":"导师想招两个本科生进组做项目，有兴趣的私聊我，这周内定","group_name":"科研群","timestamp":1763780180},
+  {"id":"r05","sender_id":"2005","sender_name":"竞赛负责人","content":"数学建模大赛报名还有3天截止，组队缺人的可以在群里找","group_name":"竞赛群","timestamp":1763780240},
+  {"id":"r06","sender_id":"2006","sender_name":"同学","content":"有人一起吃饭吗","group_name":"班级群","timestamp":1763780300},
+  {"id":"r07","sender_id":"2007","sender_name":"同学","content":"哈哈哈哈哈这个梗笑死我了","group_name":"班级群","timestamp":1763780360},
+  {"id":"r08","sender_id":"2008","sender_name":"助教","content":"期中考试成绩已上传，请登录系统查看，有异议本周内反馈","group_name":"课程群","timestamp":1763780420},
+  {"id":"r09","sender_id":"2009","sender_name":"学长","content":"分享一下我整理的考研资料，网盘链接在下面","group_name":"学习群","timestamp":1763780480},
+  {"id":"r10","sender_id":"2010","sender_name":"学院办公室","content":"关于开展2026年创新创业训练计划项目申报的通知，请各班级组织申报，材料于12月5日前提交","group_name":"学院群","timestamp":1763780540},
+  {"id":"r11","sender_id":"2011","sender_name":"群友","content":"[图片]","group_name":"水群","timestamp":1763780600},
+  {"id":"r12","sender_id":"2012","sender_name":"班委","content":"奖学金评定名单公示，有异议的同学请于三天内联系我","group_name":"班级群","timestamp":1763780660},
+  {"id":"r13","sender_id":"2013","sender_name":"同学","content":"这道题怎么做啊，求解答","group_name":"课程群","timestamp":1763780720},
+  {"id":"r14","sender_id":"2014","sender_name":"社团负责人","content":"本周六下午有志愿活动，招募志愿者10人，可加志愿时长，报名截止周四","group_name":"活动群","timestamp":1763780780},
+  {"id":"r15","sender_id":"2015","sender_name":"学院办公室","content":"紧急通知：因临时调整，明天的讲座取消，具体时间另行通知","group_name":"学院群","timestamp":1763780840},
+  {"id":"r16","sender_id":"2016","sender_name":"同学","content":"有人要二手书吗便宜出","group_name":"水群","timestamp":1763780900},
+  {"id":"r17","sender_id":"2017","sender_name":"导师","content":"你的开题报告我看过了，需要修改，明天来我办公室一趟","is_private":true,"timestamp":1763780960},
+  {"id":"r18","sender_id":"2018","sender_name":"教务处","content":"关于期末考试安排的通知：考试时间为1月5日至1月12日，具体场次见附件","group_name":"年级群","timestamp":1763781020},
+  {"id":"r19","sender_id":"2019","sender_name":"同学","content":"晚安各位","group_name":"班级群","timestamp":1763781080},
+  {"id":"r20","sender_id":"2020","sender_name":"竞赛负责人","content":"互联网+校赛决赛名单已出，请入围团队明天下午参加答辩","group_name":"竞赛群","timestamp":1763781140}
+]
