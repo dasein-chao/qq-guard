@@ -130,10 +130,16 @@ class Store:
 
     def pending_digest(self, levels: list[str] | None = None) -> list[tuple[Message, Verdict]]:
         levels = levels or ["P0", "P1", "P2"]
+        # 兼容旧三档配置值，避免旧配置导致摘要永远为空
+        legacy = {"urgent": "P0", "important": "P1", "normal": "P2", "noise": "P3"}
+        levels = [legacy.get(x, x) for x in levels]
+        # 铁律：私聊永不进摘要，代码层硬隔离，不依赖配置
+        levels = [x for x in levels if x != "P3"] or ["P0", "P1", "P2"]
         placeholders = ",".join("?" for _ in levels)
         with self._connect() as conn:
             rows = conn.execute(
-                f"{SELECT_CORE} WHERE digested=0 AND level IN ({placeholders}) ORDER BY ts",
+                f"{SELECT_CORE} WHERE digested=0 AND is_private=0 "
+                f"AND level IN ({placeholders}) ORDER BY ts",
                 levels,
             ).fetchall()
         return [self._row_to_pair(r) for r in rows]

@@ -46,9 +46,9 @@ class RuleConfig:
     # 规则分数阈值
     urgent_threshold: int = 75
     important_threshold: int = 35
-    # 哪些等级进入摘要（noise 永远不进）
+    # 哪些等级进入摘要（P3 永远不进；私聊在代码层硬隔离，不依赖此配置）
     digest_levels: list[str] = field(
-        default_factory=lambda: ["urgent", "important", "normal"]
+        default_factory=lambda: ["P0", "P1", "P2"]
     )
     # 同一发送者在窗口内的同类消息只提醒一次，避免轰炸
     dedupe_window_seconds: int = 120
@@ -66,6 +66,7 @@ class RuleConfig:
         "招募", "课题组", "实验室", "科研项目", "导师", "竞赛", "创新创业",
         "大创", "互联网+", "挑战杯", "讲座", "报名", "申请", "选拔", "面试",
         "通知", "公示", "评选", "奖学金", "实习", "内推",
+        "考试", "考查课", "补考", "期末考试", "作业截止", "期末考",
     ])
     # P2 一般有价值：学习讨论、资料、经验
     p2_keywords: list[str] = field(default_factory=lambda: [
@@ -178,6 +179,17 @@ def upgrade_config_file(path: Path = CONFIG_PATH) -> tuple[bool, str]:
     data = json.loads(path.read_text(encoding="utf-8"))
     defaults = asdict(AppConfig())
     changed = False
+    notes: list[str] = []
+
+    # 迁移旧三档枚举值到 P0-P3（字段存在但值过期的情况，普通补字段逻辑抓不到）
+    legacy_level = {"urgent": "P0", "important": "P1", "normal": "P2", "noise": "P3"}
+    rules = data.setdefault("rules", {})
+    old_levels = rules.get("digest_levels")
+    if isinstance(old_levels, list) and any(x in legacy_level for x in old_levels):
+        rules["digest_levels"] = [legacy_level.get(x, x) for x in old_levels]
+        changed = True
+        notes.append("摘要等级 urgent/important/normal → P0/P1/P2")
+
     for section, default_values in defaults.items():
         if section == "db_path":
             if "db_path" not in data:
@@ -196,5 +208,6 @@ def upgrade_config_file(path: Path = CONFIG_PATH) -> tuple[bool, str]:
         backup = path.with_suffix(".json.bak")
         backup.write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
         path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-        return True, f"已补齐新字段，原配置备份至 {backup.name}"
+        detail = "；".join(notes) if notes else "已补齐新字段"
+        return True, f"{detail}，原配置备份至 {backup.name}"
     return False, "配置已是最新"

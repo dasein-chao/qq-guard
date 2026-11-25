@@ -104,7 +104,8 @@ class Classifier:
             level = "P0"          # 近期限 + 强信号
         elif score >= 60:
             level = "P1"
-        elif p1_hits:
+        elif p1_hits and not (len(p2_hits) >= 2 and score < 60):
+            # P1 词命中，但如果明显是资料/讨论（多个 P2 信号且分数不高），降为 P2
             level = "P1"
         elif (at_hits or authoritative) and (important_hits or urgency["has_deadline"]):
             level = "P1"

@@ -195,6 +195,11 @@ class Notifier:
         if not topic:
             print("[ntfy] 未配置 topic，跳过")
             return False
+        # 占位符未填时友好跳过，别让新用户第一次跑就看到编码错误
+        if any("\u4e00" <= ch <= "\u9fff" for ch in topic) or not all(
+                ch.isascii() and (ch.isalnum() or ch in "-_") for ch in topic):
+            print("[ntfy] topic 还是占位符或含非法字符，未推送。请在 config.json 填自己的随机 topic")
+            return False
         # P0 必须穿透静音：max 优先级 + urgent 标签；P1 高；摘要静默
         if level == "P0":
             priority, tags = "max", "rotating_light"

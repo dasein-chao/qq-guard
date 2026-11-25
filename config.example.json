@@ -82,9 +82,9 @@
     "urgent_threshold": 75,
     "important_threshold": 35,
     "digest_levels": [
-      "urgent",
-      "important",
-      "normal"
+      "P0",
+      "P1",
+      "P2"
     ],
     "dedupe_window_seconds": 120,
     "p0_keywords": [
@@ -128,7 +128,17 @@
       "评选",
       "奖学金",
       "实习",
-      "内推"
+      "内推",
+      "考试",
+      "期末",
+      "考查",
+      "补考",
+      "成绩",
+      "作业",
+      "考查课",
+      "期末考试",
+      "作业截止",
+      "期末考"
     ],
     "p2_keywords": [
       "资料",
