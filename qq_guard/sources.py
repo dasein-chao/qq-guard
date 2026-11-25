@@ -29,7 +29,12 @@ def parse_onebot_event(data: dict) -> Message | None:
         sender_name=str(sender.get("nickname") or sender.get("card") or data.get("user_id", "")),
         content=content,
         group_id=str(data.get("group_id", "")),
-        group_name=str(sender.get("group_name") or ""),
+        group_name=str(
+            sender.get("group_name")
+            or data.get("group_name")
+            or sender.get("card")
+            or data.get("group_id", "")
+        ),
         timestamp=int(data.get("time", time.time())),
         is_private=data.get("message_type") == "private",
         raw=data,
