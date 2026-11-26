@@ -139,6 +139,9 @@ class NotifyConfig:
 
 @dataclass
 class SourceConfig:
+    # 消息入口模式：onebot=协议端 WebSocket（能拿全量消息，需旧机+签名）
+    #             notification=读手机通知栏（免 root、零封号风险、只能拿到弹通知的消息）
+    mode: str = "notification"
     # OneBot v11 正向 WebSocket 地址，只允许本地回环
     websocket_url: str = "ws://127.0.0.1:3001"
     # AccessToken 文件路径（相对项目根），不写 token 本身进配置
@@ -146,6 +149,17 @@ class SourceConfig:
     # 只监听这些群，留空表示全部（私聊永远不监控）
     watch_groups: list[str] = field(default_factory=list)
     watch_senders: list[str] = field(default_factory=list)
+    # --- notification 模式专用 ---
+    # 读通知栏的间隔（秒）。太小耗电，太大延迟高，3 秒是实测平衡点
+    notification_poll_seconds: int = 3
+    # QQ 通知渠道里代表"群消息"的特征词（中英都放，命中即判为群）
+    group_channel_hints: list[str] = field(
+        default_factory=lambda: ["group", "群", "qun", "troop"]
+    )
+    # 通知里看不出是群还是私聊时怎么办。默认 False=丢弃（宁漏不误监私聊）
+    assume_group_when_unknown: bool = False
+    # 探针输出文件，用于校准解析规则
+    probe_log: str = "ntf_probe.jsonl"
 
 
 @dataclass

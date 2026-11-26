@@ -10,6 +10,7 @@ from .engine import Classifier
 from .models import LEVEL_LABEL, Message, Verdict
 from .notifiers import Notifier
 from .sources import LocalSource, OneBotWebSocketSource
+from .sources_ntf import NotificationSource, list_notifications, parse_notification
 from .store import Store
 
 
@@ -87,6 +88,96 @@ class App:
             token_file=s.access_token_file,
         ).run(self.handle)
 
+    def run_notification(self) -> None:
+        """手机通知栏模式：免 root、不碰 QQ 协议，封号风险为零。"""
+        print("=== 通知监听模式（手机本机运行）===")
+        s = self.cfg.source
+        NotificationSource(
+            poll_seconds=s.notification_poll_seconds,
+            group_hints=s.group_channel_hints,
+            watch_groups=s.watch_groups,
+            assume_group_when_unknown=s.assume_group_when_unknown,
+        ).run(self.handle)
+
+    def probe_notifications(self, seconds: int = 90) -> None:
+        """探针：把 QQ 通知的真实字段抓出来，用实际数据校准解析规则。
+
+        只打印结构摘要（正文截断 60 字），并把结构化记录写到 probe_log，
+        目的是回答三个问题：
+          1) channelId 能否区分群消息和好友消息
+          2) 正文在 bigText 里还是 content 里，有没有被截断
+          3) 标题里群名长什么样（有没有"3条新消息"这类后缀）
+        """
+        s = self.cfg.source
+        print(f"=== 通知探针：接下来 {seconds} 秒抓取 QQ 通知 ===")
+        print("请在手机上照常收发几条 QQ 群消息（别发私聊，不需要）...\n")
+        seen: dict[str, dict] = {}
+        deadline = time.time() + seconds
+        while time.time() < deadline:
+            for ntf in list_notifications():
+                if str(ntf.get("packageName") or "") != "com.tencent.mobileqq":
+                    continue
+                key = str(ntf.get("id") or ntf.get("key") or "")
+                seen[key] = ntf
+            time.sleep(2)
+
+        if not seen:
+            print("没抓到任何 QQ 通知。逐项检查：")
+            print("  1) 系统设置 → 通知与状态栏 → 通知使用权 → 允许 Termux:API")
+            print("  2) QQ 里至少有一个群开着『接收消息并提醒』")
+            print("  3) 把 QQ 通知渠道的『静音』关掉（静音渠道也可能不产生通知记录）")
+            print("  4) 关掉系统『超级省电』模式（会让 termux-api 崩溃）")
+            print("  5) 确认没在 proot 里跑（proot 里 termux-api 必然失效）")
+            return
+
+        lines: list[str] = []
+        verdicts: list[str] = []
+        for k, ntf in seen.items():
+            title = str(ntf.get("title") or "")
+            big = str(ntf.get("bigText") or "")
+            content = str(ntf.get("content") or "")
+            ch = str(ntf.get("channelId") or "")
+            scope = parse_notification(
+                ntf, s.group_channel_hints, [], True
+            )
+            parsed = "群消息" if scope else "无法判定"
+            lines.append(
+                f"[{parsed}] channelId={ch or '(空)'}\n"
+                f"    title   = {title[:60]}\n"
+                f"    bigText = {'有' if big else '无'}"
+                f"{'（比content长）' if len(big) > len(content) else ''}\n"
+                f"    content = {content[:60] or '(空)'}\n"
+                f"    正文长度 = {len(big or content)}"
+            )
+            verdicts.append(ch)
+        report = "\n".join(lines)
+        print("\n" + report + "\n")
+        print("=" * 56)
+        non_empty = [c for c in verdicts if c]
+        if non_empty and len(set(non_empty)) > 1:
+            print("结论①：channelId 有多个值 → 可以靠它区分群消息/好友消息（最理想）")
+        elif non_empty:
+            print("结论②：channelId 只有一个值 → 区分不了，需要用群名白名单兜底")
+        else:
+            print("结论③：channelId 为空 → 只能靠群名白名单，建议先填 watch_groups")
+        if any(len(str(n.get('bigText') or '')) > len(str(n.get('content') or '')) for n in seen.values()):
+            print("结论④：bigText 比 content 长 → 正文取 bigText，截断风险小")
+        else:
+            print("结论⑤：bigText 不比 content 长 → 正文可能被 QQ 截断，P0 提醒里要提示回原群看")
+        print("=" * 56)
+        print("以上这段结论（不用发全文）就是校准解析规则需要的全部信息。")
+
+        out = Path(s.probe_log)
+        if not out.is_absolute():
+            out = ROOT / out
+        with out.open("a", encoding="utf-8") as f:
+            for ntf in seen.values():
+                slim = {k: ntf.get(k) for k in
+                        ("id", "key", "group", "title", "content", "bigText",
+                         "channelId", "packageName", "postTime")}
+                f.write(json.dumps(slim, ensure_ascii=False) + "\n")
+        print(f"[探针记录] 已追加到 {out.name}")
+
     def run_daemon(self) -> None:
         import threading
 
@@ -97,7 +188,10 @@ class App:
                 time.sleep(60)
 
         threading.Thread(target=loop, daemon=True).start()
-        self.run_listen()
+        if getattr(self.cfg.source, "mode", "onebot") == "notification":
+            self.run_notification()
+        else:
+            self.run_listen()
 
     def show_stats(self) -> None:
         print("=== 存储统计 ===")
@@ -121,15 +215,17 @@ def main() -> None:
     import argparse
     parser = argparse.ArgumentParser(description="QQ 群聊智能监控与信息筛选系统")
     parser.add_argument("mode", nargs="?", default="local",
-                        choices=["local", "listen", "daemon", "stats", "summary", "config",
-                                 "backup", "backups", "verify", "restore", "query",
-                                 "cleanup", "upgrade-config"],
-                        help="local=本地验证, listen=实时监听, daemon=监听+摘要+清理, "
+                        choices=["local", "listen", "ntf", "probe", "daemon", "stats",
+                                  "summary", "config", "backup", "backups", "verify",
+                                  "restore", "query", "cleanup", "upgrade-config"],
+                        help="local=本地验证, listen=协议端监听, ntf=手机通知监听, "
+                             "probe=抓取通知真实格式, daemon=监听+摘要+清理, "
                              "stats=统计, summary=立即发摘要, config=生成默认配置, "
                              "backup/backups/verify/restore=备份恢复, query=历史查询, "
                              "cleanup=清理普通消息, upgrade-config=补齐配置新字段")
     parser.add_argument("--sample", default=str(ROOT / "sample_messages.json"))
     parser.add_argument("--config", default=str(CONFIG_PATH))
+    parser.add_argument("--seconds", type=int, default=90, help="probe: 抓取时长（秒）")
     parser.add_argument("--from", dest="from_backup", default="latest")
     parser.add_argument("--label", default="")
     parser.add_argument("--group", default="", help="query: 群名或群号")
@@ -182,6 +278,10 @@ def main() -> None:
         app.run_local(args.sample)
     elif args.mode == "listen":
         app.run_listen()
+    elif args.mode == "ntf":
+        app.run_notification()
+    elif args.mode == "probe":
+        app.probe_notifications(args.seconds)
     elif args.mode == "daemon":
         app.run_daemon()
     elif args.mode == "stats":

@@ -40,6 +40,7 @@ class Notifier:
             return False
         title = f"[{verdict.level} {verdict.label}] {verdict.info.title[:30]}"
         body = self.format_alert(msg, verdict)
+        self._android(title, body, verdict.level)
         if self.cfg.desktop_enabled:
             self._desktop(title, body)
         if getattr(self.cfg, "ntfy_enabled", False):
@@ -70,6 +71,7 @@ class Notifier:
     def send_digest(self, items: list[tuple[Message, Verdict]], title: str = "QQ消息摘要") -> bool:
         body = self.format_digest(items)
         ok = False
+        ok = self._android(title, body, "digest") or ok
         if getattr(self.cfg, "ntfy_enabled", False):
             ok = self._ntfy(title, body, "digest") or ok
         if self.cfg.email_enabled:
@@ -164,6 +166,38 @@ class Notifier:
                 pass
         except Exception as e:
             print(f"[桌面提醒失败] {e}")
+
+    def _android(self, title: str, body: str, level: str = "P1") -> bool:
+        """手机本地通知（Termux:API）。手机侧不需要任何云服务、不需要 topic。
+
+        非 Termux 环境自动跳过，所以同一份代码在电脑上跑也不会报错。
+        P0 用 max 优先级 + 响铃 + 长振动，穿透静音；P1 高优先级；日报静默。
+        """
+        import shutil
+        import subprocess
+        if shutil.which("termux-notification") is None:
+            return False
+        if level == "P0":
+            args = ["--priority", "max", "--sound", "--vibrate", "800",
+                    "--led-color", "ffff0000", "--id", "qqguard-p0",
+                    "--group", "qqguard-p0"]
+        elif level == "P1":
+            args = ["--priority", "high", "--sound", "--vibrate", "300",
+                    "--id", "qqguard-p1", "--group", "qqguard-p1"]
+        else:
+            args = ["--priority", "normal", "--id", "qqguard-digest",
+                    "--group", "qqguard-digest"]
+        try:
+            subprocess.run(
+                ["termux-notification", "--title", title[:120],
+                 "--content", body[:1200], *args],
+                timeout=20, capture_output=True,
+            )
+            print(f"[手机通知] {level}: {title[:40]}")
+            return True
+        except Exception as e:
+            print(f"[手机通知失败] {e}")
+            return False
 
     def _email(self, title: str, body: str) -> bool:
         cfg = self.cfg
