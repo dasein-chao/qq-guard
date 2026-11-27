@@ -147,6 +147,9 @@ class Notifier:
     def _desktop(self, title: str, body: str) -> None:
         brief = body.replace("\n", " | ")[:160]
         try:
+            import sys
+            if sys.platform != "win32":
+                return          # 手机/Linux 上没有 PowerShell 气泡，别刷失败日志
             import subprocess
             ps = (
                 "$ErrorActionPreference='SilentlyContinue';"
