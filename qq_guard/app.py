@@ -37,14 +37,39 @@ class App:
 
     def send_summary(self) -> None:
         items = self.store.pending_digest(self.cfg.rules.digest_levels)
+        cover = self.store.coverage(24)
+        line = self._coverage_line(cover)
         if not items:
             print("[摘要] 今日没有需要汇总的重要信息。")
+            print(f"[覆盖] {line}")
             return
         title = f"QQ消息摘要 {time.strftime('%m-%d %H:%M')}"
-        ok = self.notifier.send_digest(items, title)
+        ok = self.notifier.send_digest(items, title, coverage=line)
         if ok:
             self.store.mark_digested([m.message_id for m, _ in items])
             print(f"[摘要] 已发送 {len(items)} 条")
+        print(f"[覆盖] {line}")
+
+    @staticmethod
+    def _ago(hours: float) -> str:
+        if hours < 0:
+            return "从未收到"
+        if hours < 1:
+            return f"{int(hours * 60)} 分钟前"
+        return f"{hours:.1f} 小时前"
+
+    @classmethod
+    def _coverage_line(cls, cover: dict) -> str:
+        """如实报告"看见了什么、可能漏了什么"，不假装一条不漏。"""
+        s = (f"本次覆盖：近{cover['hours']}小时看到 {cover['total']} 条消息，"
+             f"来自 {cover['groups']} 个群；最后一条在{cls._ago(cover['silent_hours'])}。")
+        if cover["silent_hours"] >= 8:
+            s += ("\n⚠️ 超过 8 小时没收到任何通知：可能手机没电/后台被杀，"
+                  "也可能群里没人说话。重要群请手动翻一下，别全靠这套系统。")
+        else:
+            s += ("\n（本系统读的是 QQ 通知栏，看不到被设为「免打扰」的群消息——"
+                  "这是已知天花板，不瞒你。）")
+        return s
 
     def cleanup(self) -> int:
         r = self.cfg.retention

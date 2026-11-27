@@ -68,8 +68,11 @@ class Notifier:
             f"【可信度】{i.confidence}"
         )
 
-    def send_digest(self, items: list[tuple[Message, Verdict]], title: str = "QQ消息摘要") -> bool:
+    def send_digest(self, items: list[tuple[Message, Verdict]], title: str = "QQ消息摘要",
+                    coverage: str = "") -> bool:
         body = self.format_digest(items)
+        if coverage:
+            body = f"{body}\n\n——\n{coverage}"
         ok = False
         ok = self._android(title, body, "digest") or ok
         if getattr(self.cfg, "ntfy_enabled", False):

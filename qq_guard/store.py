@@ -160,6 +160,35 @@ class Store:
             rows = conn.execute("SELECT level, COUNT(*) FROM messages GROUP BY level").fetchall()
         return {r[0]: r[1] for r in rows}
 
+    def coverage(self, hours: int = 24) -> dict:
+        """这段时间到底"看见了"多少。用来如实告知漏检，而不是假装一条不漏。
+
+        通知监听路线的天花板由 QQ 决定，所以每天必须把真实覆盖情况摊开给用户看。
+        """
+        now = int(time.time())
+        since = now - hours * 3600
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT COUNT(*), MAX(ts), MIN(ts), SUM(is_private=0) "
+                "FROM messages WHERE ts >= ?", (since,)
+            ).fetchone()
+            groups = conn.execute(
+                "SELECT COUNT(DISTINCT group_name) FROM messages "
+                "WHERE ts >= ? AND is_private=0 AND group_name != ''", (since,)
+            ).fetchone()
+        total = row[0] or 0
+        last_ts = int(row[1] or 0)
+        first_ts = int(row[2] or 0)
+        return {
+            "hours": hours,
+            "total": total,
+            "group_total": int(row[3] or 0),
+            "groups": int(groups[0] or 0),
+            "last_ts": last_ts,
+            "first_ts": first_ts,
+            "silent_hours": round((now - last_ts) / 3600, 1) if last_ts else -1,
+        }
+
     def recent(self, limit: int = 20) -> list[tuple[Message, Verdict]]:
         with self._connect() as conn:
             rows = conn.execute(f"{SELECT_CORE} ORDER BY ts DESC LIMIT ?", (limit,)).fetchall()
