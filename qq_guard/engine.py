@@ -102,6 +102,9 @@ class Classifier:
             level = "P0"          # 名额有限/先到先得 + 近期 = 现在就得定
         elif urgency["deadline_soon"] and (urgent_hits or at_hits or score >= 80):
             level = "P0"          # 近期限 + 强信号
+        elif urgency["deadline_soon"] and (
+                authoritative or any(k in msg.content for k in ("必须", "务必", "不得", "一律"))):
+            level = "P0"          # 近期限(24h内) + 权威发送者/强制语气 = 现在就得办
         elif score >= 60:
             level = "P1"
         elif p1_hits and not (len(p2_hits) >= 2 and score < 60):
@@ -211,10 +214,17 @@ class Classifier:
         now_or_never = ["名额有限", "名额", "先到先得", "限时", "仅限", "限人数",
                         "即将截止", "抓紧", "最后一天", "报满"]
         urgent_now = any(k in content for k in now_or_never)
+        # "今晚10点前""明天8点半前"这类钟点式硬截止：没有"截止/提交"字样也必须是硬期限
+        # （2026-11-27 修复：原逻辑只认"截止/提交"等词，导致"今晚10点前必须交"被漏判为 P2）
+        clock_deadline = re.search(
+            r"\d{1,2}\s*[点时](?:半|\d{1,2}\s*分)?\s*(?:之)?前", content
+        )
         has_deadline = any(k in content for k in
                            ["截止", "之前", "前提交", "前报名", "前反馈", "前联系",
-                            "最晚", "限额", "限时", "内定", "报名", "提交", "反馈"]) \
-            or urgent_now or any(k in content for k in mandatory)
+                            "最晚", "限额", "限时", "内定", "报名", "提交", "反馈",
+                            "必须交", "必须提交", "务必交", "务必提交", "不得缺席"]) \
+            or urgent_now or any(k in content for k in mandatory) \
+            or bool(clock_deadline)
         deadline_soon = any(p in content for p in soon_patterns) and has_deadline
         deadline_imminent = any(p in content for p in imminent_patterns) and has_deadline
         # "还有N天"：N<=1 算 P0 级，N<=5 算 P1 级
