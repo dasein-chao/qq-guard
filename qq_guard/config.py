@@ -163,11 +163,41 @@ class SourceConfig:
 
 
 @dataclass
+class JudgeConfig:
+    """判定方式：规则 / AI / 混合。
+
+    rules  = 只用关键词+时间规则，离线、0 延迟、0 出网
+    ai     = 每条消息都问 AI（最准，但每条都要等网络，P0 会慢 1-3 秒）
+    hybrid = 规则先跑：规则判 P0 立刻响（不等网络）；只有"拿不准"的才问 AI
+             补判，日报再让 AI 一次性重排。（默认，性价比最高）
+    """
+    mode: str = "hybrid"
+    # 服务商预设（zhipu / siliconflow / deepseek / openrouter / moonshot / openai）
+    # 留空则用 base_url + model 手填
+    provider: str = "zhipu"
+    base_url: str = "https://open.bigmodel.cn/api/paas/v4"
+    model: str = "glm-4.7-flash"
+    # Key 只放文件，不进配置/日志/仓库
+    key_file: str = ".llm_key"
+    timeout: int = 45
+    # 每日最多请求几次，防跑飞。日报批量算 1 次
+    daily_call_cap: int = 200
+    # 出网前脱敏：QQ号/手机号/身份证 → 占位符
+    redact_enabled: bool = True
+    # hybrid 模式下，规则分数落在这个区间才问 AI（拿不准的灰区）
+    vague_score_min: int = 15
+    vague_score_max: int = 65
+    # 日报前用 AI 批量重排（把埋在 P2 里的重要事捞上来）
+    digest_rerank: bool = True
+
+
+@dataclass
 class AppConfig:
     rules: RuleConfig = field(default_factory=RuleConfig)
     notify: NotifyConfig = field(default_factory=NotifyConfig)
     source: SourceConfig = field(default_factory=SourceConfig)
     retention: RetentionConfig = field(default_factory=RetentionConfig)
+    judge: JudgeConfig = field(default_factory=JudgeConfig)
     db_path: str = "messages.db"
 
 

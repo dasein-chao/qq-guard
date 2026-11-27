@@ -128,6 +128,21 @@ class Store:
                 int(verdict.is_duplicate), int(time.time()),
             ))
 
+    def pending_rescue(self, hours: int = 24, limit: int = 40) -> list[tuple[Message, Verdict]]:
+        """被规则丢进 P3 的近期消息，供 AI 复核捞回。
+
+        这是"规则判不准"的补救口：规则说低价值，AI 可能认出里面藏着正式通知。
+        只取最近 N 小时、最多 limit 条，控制成本。私聊永不参与。
+        """
+        since = int(time.time()) - hours * 3600
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"{SELECT_CORE} WHERE digested=0 AND is_private=0 AND level='P3' "
+                f"AND ts >= ? ORDER BY ts DESC LIMIT ?",
+                (since, limit),
+            ).fetchall()
+        return [self._row_to_pair(r) for r in rows]
+
     def pending_digest(self, levels: list[str] | None = None) -> list[tuple[Message, Verdict]]:
         levels = levels or ["P0", "P1", "P2"]
         # 兼容旧三档配置值，避免旧配置导致摘要永远为空

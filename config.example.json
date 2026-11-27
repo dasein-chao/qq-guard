@@ -130,12 +130,8 @@
       "实习",
       "内推",
       "考试",
-      "期末",
-      "考查",
-      "补考",
-      "成绩",
-      "作业",
       "考查课",
+      "补考",
       "期末考试",
       "作业截止",
       "期末考"
@@ -210,25 +206,48 @@
     "webhook_enabled": false,
     "webhook_url": "",
     "webhook_payload_template": "{\"title\":\"{title}\",\"text\":\"{content}\"}",
-    "desktop_enabled": true,
-    "summary_hour": 21,
-    "summary_enabled": true,
     "ntfy_enabled": true,
     "ntfy_server": "https://ntfy.sh",
-    "ntfy_topic": "把你自己的随机topic填到这里",
-    "ntfy_topic_by_level": {}
+    "ntfy_topic": "REPLACE_WITH_YOUR_RANDOM_TOPIC",
+    "ntfy_topic_by_level": {},
+    "desktop_enabled": true,
+    "summary_hour": 21,
+    "summary_enabled": true
   },
   "source": {
+    "mode": "notification",
     "websocket_url": "ws://127.0.0.1:3001",
+    "access_token_file": ".protocol_token",
     "watch_groups": [],
     "watch_senders": [],
-    "access_token_file": ".protocol_token"
+    "notification_poll_seconds": 3,
+    "group_channel_hints": [
+      "group",
+      "群",
+      "qun",
+      "troop"
+    ],
+    "assume_group_when_unknown": false,
+    "probe_log": "ntf_probe.jsonl"
   },
-  "db_path": "messages.db",
   "retention": {
-    "normal_days": 7,
-    "keep_p0p1_forever": true,
-    "cleanup_hour": 3,
-    "important_days": 60
-  }
+    "normal_days": 3,
+    "important_days": 60,
+    "keep_p0p1_forever": false,
+    "cleanup_hour": 3
+  },
+  "judge": {
+    "mode": "hybrid",
+    "provider": "zhipu",
+    "base_url": "https://open.bigmodel.cn/api/paas/v4",
+    "model": "glm-4.7-flash",
+    "key_file": ".llm_key",
+    "timeout": 45,
+    "daily_call_cap": 200,
+    "redact_enabled": true,
+    "vague_score_min": 15,
+    "vague_score_max": 65,
+    "digest_rerank": true
+  },
+  "db_path": "messages.db"
 }

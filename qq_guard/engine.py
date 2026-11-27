@@ -9,7 +9,8 @@ from collections import defaultdict, deque
 from difflib import SequenceMatcher
 from typing import TYPE_CHECKING, Callable
 
-from .models import ExtractedInfo, Message, Verdict
+from .ai_client import SYSTEM_PROMPT
+from .models import LEVELS, ExtractedInfo, Message, Verdict
 
 if TYPE_CHECKING:
     from .config import RuleConfig
@@ -19,9 +20,17 @@ AiClient = Callable[[list[dict]], dict | None]
 
 
 class Classifier:
-    def __init__(self, rules: RuleConfig, ai_client: AiClient | None = None):
+    def __init__(self, rules: RuleConfig, ai_client: AiClient | None = None,
+                 ai_mode: str = "hybrid", vague_lo: int = 15, vague_hi: int = 65):
         self.rules = rules
         self.ai_client = ai_client
+        # rules=从不用 AI / ai=每条都问 / hybrid=规则拿不准时才问
+        self.ai_mode = ai_mode if ai_mode in ("rules", "ai", "hybrid") else "hybrid"
+        self.vague_lo = vague_lo
+        self.vague_hi = vague_hi
+        # AI 调用计数，便于向用户如实汇报"这次靠 AI 判了几条"
+        self.ai_called = 0
+        self.ai_upgraded = 0
         self._identity_set = set(rules.my_identities)
         # 每群最近消息，用于上下文识别
         self._context: dict[str, deque[Message]] = defaultdict(
@@ -121,17 +130,30 @@ class Classifier:
         info = self._extract(msg, level)
         info.original_id = msg.message_id
 
-        # AI 兜底：规则拿不准时调用（可选）
+        # AI 判定：规则打底，AI 在"看不清"的时候接手（可选）
+        # rules 模式从不出网；hybrid 只问灰区；ai 模式每条都问
         ai_used = False
-        if (self.ai_client and 20 <= score <= 70 and level in ("P2", "P3")):
-            ai_result = self._ask_ai(msg, level, info)
-            if ai_result:
-                ai_level = str(ai_result.get("level", "")).upper()
+        ai_reason = ""
+        if self.ai_client and self.ai_mode != "rules":
+            ask = False
+            if self.ai_mode == "ai":
+                ask = True
+            elif self.vague_lo <= score <= self.vague_hi and level in ("P1", "P2", "P3"):
+                ask = True
+            if ask:
+                self.ai_called += 1
+                ai_result = self._ask_ai(msg, level, info)
+                ai_level = str((ai_result or {}).get("level", "")).upper()
                 if ai_level in ("P0", "P1", "P2", "P3"):
-                    level = ai_level
-                    info = ExtractedInfo.from_dict(ai_result.get("info"))
+                    # 规则判 P0 时不让 AI 往下压：漏掉紧急事的代价 > 多响一次
+                    if not (level == "P0" and ai_level != "P0"):
+                        if ai_level != level and LEVELS.index(ai_level) < LEVELS.index(level):
+                            self.ai_upgraded += 1
+                        level = ai_level
+                    info = self._merge_ai_info(info, ai_result)
                     info.original_id = msg.message_id
                     ai_used = True
+                    ai_reason = str(ai_result.get("reason", "") or "")[:80]
 
         # 重复消息处理
         duplicate = self._is_duplicate(msg)
@@ -158,7 +180,7 @@ class Classifier:
         if context_boost:
             reasons.append(f"上下文+{context_boost}")
         if ai_used:
-            reasons.append("AI判定")
+            reasons.append("AI判定:" + ai_reason if ai_reason else "AI判定")
         if duplicate:
             reasons.append("重复消息")
 
@@ -332,19 +354,50 @@ class Classifier:
 
     def _ask_ai(self, msg: Message, level: str, info: ExtractedInfo) -> dict | None:
         """调用注入的 AI 客户端。失败返回 None，不影响原始消息保存。"""
+        import time as _t
+        when = ""
+        if msg.timestamp:
+            try:
+                when = _t.strftime("%Y-%m-%d %H:%M", _t.localtime(msg.timestamp))
+            except Exception:
+                when = ""
+        now = _t.strftime("%Y-%m-%d %H:%M")
         try:
             return self.ai_client([{
                 "role": "system",
-                "content": (
-                    "你是 QQ 群消息分级器。只输出 JSON，不要其他文字。"
-                    "字段：level(P0/P1/P2/P3)、category、title、deadline、"
-                    "needs_action、importance、urgency、confidence。"
-                    "P0=错过有明确损失的紧急事；P1=重要机会/正式通知；"
-                    "P2=一般有价值；P3=闲聊广告。未知填'待核实'。"
-                ),
+                "content": SYSTEM_PROMPT,
             }, {
                 "role": "user",
-                "content": f"群：{msg.group_name or msg.group_id}\n内容：{msg.content}",
+                "content": (
+                    f"现在是 {now}。\n"
+                    f"群：{msg.group_name or msg.group_id or '未知'}\n"
+                    f"发送者：{msg.sender_name or '未知'}\n"
+                    f"消息时间：{when or '未知'}\n"
+                    f"内容：{msg.content}\n\n"
+                    f"（规则引擎初判 {level}，供参考，你可以推翻）"
+                ),
             }])
         except Exception:
             return None
+
+    @staticmethod
+    def _merge_ai_info(info: ExtractedInfo, ai: dict | None) -> ExtractedInfo:
+        """把 AI 的扁平字段合进结构化信息。AI 说"待核实"的不覆盖规则已抽到的值。"""
+        if not ai:
+            return info
+        mapping = {
+            "category": "category", "title": "title", "deadline": "deadline",
+            "action": "action_required", "reason": None, "confidence": "confidence",
+        }
+        for ai_key, info_key in mapping.items():
+            if not info_key:
+                continue
+            val = str(ai.get(ai_key, "") or "").strip()
+            if val and val not in ("待核实", "未知", "无", "none", "None", "-"):
+                setattr(info, info_key, val[:120])
+        lv = str(ai.get("level", "")).upper()
+        if lv in ("P0", "P1"):
+            info.importance = "高"
+        elif lv == "P3":
+            info.importance = "低"
+        return info

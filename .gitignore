@@ -1,10 +1,12 @@
 # === 凭据（绝对不能上传）===
 .protocol_token
+.llm_key
 config.json
 config.json.bak
 *.key
 *.pem
 *_sendkey*
+llm_usage.jsonl
 
 # === 数据与备份（含个人隐私）===
 *.db
